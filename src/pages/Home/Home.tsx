@@ -1,22 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 
 import { Container } from '@layouts/';
-import { TodoItem } from '@base/types';
-import { Form, List } from '@components/';
+import { ITagItem, ITodoItem } from '@base/types';
+import { Form, List, Tags } from '@components/';
 
 import seedersItems from '@base/seeders/todos.json';
+import seedersTags from '@base/seeders/tags.json';
 
 export const Home = () => {
-  const localItems: TodoItem[] =
+  const localItems: ITodoItem[] =
     JSON.parse(localStorage.getItem('items') ?? '') ?? [];
-
-  const initialState: TodoItem[] = localItems.length
+  const initialState: ITodoItem[] = localItems.length
     ? localItems
     : seedersItems;
 
-  const [items, setItems] = useState<TodoItem[]>(initialState);
+  const [items, setItems] = useState<ITodoItem[]>(initialState);
+  const [tagsItems, setTagsItems] = useState<ITagItem[]>(seedersTags);
 
-  const onSubmit = (item: TodoItem) => {
+  const onSubmit = (item: ITodoItem) => {
     setItems((prevState) => [...prevState, item]);
   };
 
@@ -32,15 +33,45 @@ export const Home = () => {
     setItems((prevState) => prevState.filter((item) => item.id !== todoId));
   };
 
+  const onTagClick = (tagId: number) => {
+    setTagsItems((prevState) =>
+      prevState.map((item) => {
+        const isActive = item.id === tagId && !item.isActive;
+        return { ...item, isActive };
+      })
+    );
+  };
+
   useEffect(() => {
     localStorage.setItem('items', JSON.stringify(items));
   }, [items]);
 
+  const todosFiltered = useMemo(() => {
+    const activeTag = tagsItems.find((item) => item.isActive);
+    if (!activeTag) {
+      return items;
+    }
+    return items.filter(({ tags }) =>
+      tags?.find(({ id }) => activeTag.id === id)
+    );
+  }, [tagsItems, items]);
+
   return (
     <Container>
-      <h1 className="ui-title-1">Home Page</h1>
-      <Form onSubmit={onSubmit} />
-      <List items={items} onChecked={onChecked} onDelete={onDelete} />
+      <div className="view-wrapper">
+        <div className="view-sidebar">
+          <Tags items={tagsItems} onItemClick={onTagClick} isVertical />
+        </div>
+        <div className="view-content">
+          <h1 className="ui-title-1">Tasks list</h1>
+          <Form onSubmit={onSubmit} />
+          <List
+            items={todosFiltered}
+            onChecked={onChecked}
+            onDelete={onDelete}
+          />
+        </div>
+      </div>
     </Container>
   );
 };

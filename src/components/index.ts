@@ -2,4 +2,4 @@
 
 export { Header } from './Header';
 export { Footer } from './Footer';
-export { Form, List } from './Todo';
+export { Form, List, Tags } from './Todo';
